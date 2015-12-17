@@ -3,7 +3,7 @@ using System.ServiceModel;
 
 namespace ExamPrep1
 {
-    [ServiceContract]
+    [ServiceContract(SessionMode = SessionMode.Required)]
     public interface IRocketService
     {
         [FaultContract(typeof(NoAvailableLaunchpadFault))]
