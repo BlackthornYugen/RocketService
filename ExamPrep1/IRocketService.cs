@@ -32,13 +32,14 @@ namespace ExamPrep1
     internal class NoAvailableLaunchpadFault
     {
         [DataMember]
-        string Message = "There are no available launchpads to place your spacecraft.";
+        public string Message = "There are no available launchpads to place your spacecraft.";
     }
 
     [DataContract]
     internal class NoAvailableHangerFault
     {
-        string Message = "There are no available hangers to store your spacecraft.";
+        [DataMember]
+        public string Message = "There are no available hangers to store your spacecraft.";
     }
 
     [DataContract]

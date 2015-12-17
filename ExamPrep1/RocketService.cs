@@ -26,12 +26,25 @@ namespace ExamPrep1
                     return;
                 }
             }
-            throw new FaultException<NoAvailableLaunchpadFault>(new NoAvailableLaunchpadFault());
+            var fault = new NoAvailableLaunchpadFault();
+            throw new FaultException<NoAvailableLaunchpadFault>(fault, fault.Message);
         }
 
         public Rocket AccessExistingRocket(int launchpadId)
         {
-            throw new NotImplementedException();
+            if (launchpads[launchpadId] == null)
+            {
+                throw new FaultException(String.Format("Hanger {0} did not have anything on it!", launchpadId));
+            } 
+
+            Rocket rocket = launchpads[launchpadId] as Rocket;
+            if (rocket == null)
+            {
+                throw new FaultException(String.Format("Hanger {0} did not have a rocket on it.", launchpadId));
+            }
+
+            activeRocketBySessionId[OperationContext.Current.SessionId] = rocket;
+            return rocket;
         }
 
         public void AddCargo(Cargo cargo)
@@ -41,7 +54,22 @@ namespace ExamPrep1
 
         public void LaunchActiveRocket(Location target)
         {
-            throw new NotImplementedException();
+            Rocket rocket = activeRocketBySessionId[OperationContext.Current.SessionId];
+            if (rocket == null)
+            {
+                throw new FaultException(String.Format("No active rocket to send to {0}.", target.Name ?? "place"));
+            }
+            for (int i = 0; i < launchpads.Length; i++)
+            {
+                if (launchpads[i] == rocket)
+                {
+                    launchpads[i] = null;
+                    activeRocketBySessionId[OperationContext.Current.SessionId] = null;
+                    Console.WriteLine("Rocket is blasting off to {0}.", target.Name ?? "place");
+                    return;
+                }
+            }
+            Console.WriteLine("Rocket was not found on any launchpad.");
         }
 
         public void RemoveActiveRocket()
