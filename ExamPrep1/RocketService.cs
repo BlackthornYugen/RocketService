@@ -5,25 +5,32 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Text;
+using System.IO;
 
 namespace ExamPrep1
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single)]
     public class RocketService : IRocketService
     {
+        int nextRocketId = 1;
+        int nextLocationId = 1;
         Object[] launchpads = new Object[10];
         Object[] hangers = new Object[10];
         Dictionary<string, Rocket> activeRocketBySessionId = new Dictionary<string, Rocket>();
-        
-        public void NewRocket(Rocket rocket)
+
+        public Rocket NewRocket(Rocket rocket)
         {
-            for(int i = 0; i < launchpads.Length; i++)
+            for (int i = 0; i < launchpads.Length; i++)
             {
                 if (launchpads[i] == null)
                 {
                     launchpads[i] = rocket;
                     activeRocketBySessionId[OperationContext.Current.SessionId] = rocket;
-                    return;
+                    if (rocket.Location == null) rocket.Location = new Location { Id = "LOC" + nextLocationId++ };
+                    rocket.Location.Name = String.Format("Launch pad {0}", i + 1);
+                    rocket.Location.Terestrial = true;
+                    if (rocket.Id == null) rocket.Id = "RCKT" + nextRocketId++;
+                    return rocket;
                 }
             }
             var fault = new NoAvailableLaunchpadFault();
@@ -54,22 +61,25 @@ namespace ExamPrep1
 
         public void LaunchActiveRocket(Location target)
         {
-            Rocket rocket = activeRocketBySessionId[OperationContext.Current.SessionId];
-            if (rocket == null)
+            using (LogToFile())
             {
-                throw new FaultException(String.Format("No active rocket to send to {0}.", target.Name ?? "place"));
-            }
-            for (int i = 0; i < launchpads.Length; i++)
-            {
-                if (launchpads[i] == rocket)
+                Rocket rocket = activeRocketBySessionId[OperationContext.Current.SessionId];
+                if (rocket == null)
                 {
-                    launchpads[i] = null;
-                    activeRocketBySessionId[OperationContext.Current.SessionId] = null;
-                    Console.WriteLine("Rocket is blasting off to {0}.", target.Name ?? "place");
-                    return;
+                    throw new FaultException(String.Format("No active rocket to send to {0}.", target.Name ?? "place"));
                 }
+                for (int i = 0; i < launchpads.Length; i++)
+                {
+                    if (launchpads[i] == rocket)
+                    {
+                        launchpads[i] = null;
+                        activeRocketBySessionId[OperationContext.Current.SessionId] = null;
+                        Console.WriteLine(GetTimestamp() + "Rocket is blasting off to {0}.", target.Name ?? "place");
+                        return;
+                    }
+                }
+                Console.WriteLine(GetTimestamp() + "Rocket was not found on any launchpad.");
             }
-            Console.WriteLine("Rocket was not found on any launchpad.");
         }
 
         public void RemoveActiveRocket()
@@ -80,6 +90,19 @@ namespace ExamPrep1
         public void RemoveCargo(Cargo cargo)
         {
             throw new NotImplementedException();
+        }
+
+        IDisposable LogToFile()
+        {
+            FileStream fs = new FileStream(Path.GetTempPath() + "RocketServ_" + DateTime.Now.ToString("yyyy-MM-dd") + ".log", FileMode.Append);
+            StreamWriter sw = new StreamWriter(fs);
+            Console.SetOut(sw);
+            return sw;
+        }
+
+        string GetTimestamp()
+        {
+            return DateTime.Now.ToString("hh:mm:ss\t");
         }
     }
 }

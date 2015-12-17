@@ -9,7 +9,7 @@ namespace ExamPrep1
         [FaultContract(typeof(NoAvailableLaunchpadFault))]
 
         [OperationContract(IsInitiating = true, IsTerminating = false)]
-        void NewRocket(Rocket rocket);
+        Rocket NewRocket(Rocket rocket);
 
         [OperationContract(IsInitiating = true, IsTerminating = false)]
         Rocket AccessExistingRocket(int launchpadId);
@@ -46,7 +46,10 @@ namespace ExamPrep1
     public class Rocket
     {
         [DataMember]
-        public int Id { get; set; }
+        public string Id { get; set; }
+
+        [DataMember]
+        public string Name { get; set; }
 
         [DataMember]
         public Location Location { get; set; }
@@ -55,16 +58,26 @@ namespace ExamPrep1
     [DataContract]
     public class Location
     {
+        [DataMember]
         public string Id { get; set; }
+
+        [DataMember]
         public string Name { get; set; }
+
+        [DataMember]
         public bool Terestrial { get; set; }
     }
 
     [DataContract]
     public class Cargo
     {
+        [DataMember]
         public string Id { get; set; }
+
+        [DataMember]
         public string Name { get; set; }
+
+        [DataMember]
         public Location Location { get; set; }
     }
 }
